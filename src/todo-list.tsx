@@ -139,6 +139,7 @@ export default function TodoList() {
                   setOpenCalendarId(null)
                 }} 
                 initialFocus 
+                className="custom-calendar"
               />
             </PopoverContent>
           </Popover>
@@ -216,6 +217,7 @@ export default function TodoList() {
                     selected={todo.dueDate ?? undefined} 
                     onSelect={(date) => updateDueDate(todo.id, date)} 
                     initialFocus 
+                    className="custom-calendar"
                   />
                 </PopoverContent>
               </Popover>
