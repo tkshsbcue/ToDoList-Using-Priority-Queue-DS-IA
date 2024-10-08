@@ -1,102 +1,119 @@
-"use client"
-
-import React, { useState } from "react"
-import { format } from "date-fns"
-import { Calendar as CalendarIcon, Trash2, AlertCircle } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import React, { useState, useCallback } from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, Trash2, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Todo {
-  id: number
-  text: string
-  completed: boolean
-  priority: "low" | "medium" | "high"
-  dueDate: Date | null
+  id: number;
+  text: string;
+  completed: boolean;
+  priority: "low" | "medium" | "high";
+  dueDate: Date | null;
 }
 
-export default function TodoList() {
-  const [todos, setTodos] = useState<Todo[]>([])
-  const [newTodo, setNewTodo] = useState("")
-  const [newPriority, setNewPriority] = useState<"low" | "medium" | "high">("medium")
-  const [newDueDate, setNewDueDate] = useState<Date | null>(null)
-  const [filter, setFilter] = useState<"all" | "active" | "completed">("all")
-  const [openCalendarId, setOpenCalendarId] = useState<number | null>(null)
+const priorityOrder = { low: 0, medium: 1, high: 2 };
+
+const TodoList = () => {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [newTodo, setNewTodo] = useState("");
+  const [newPriority, setNewPriority] = useState<"low" | "medium" | "high">("medium");
+  const [newDueDate, setNewDueDate] = useState<Date | null>(null);
+  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [openCalendarId, setOpenCalendarId] = useState<number | null>(null);
+
+  const sortTodos = useCallback((todoList: Todo[]): Todo[] => {
+    return [...todoList].sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      if (a.priority !== b.priority) return priorityOrder[b.priority] - priorityOrder[a.priority];
+      if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime();
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return 0;
+    });
+  }, []);
 
   const addTodo = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (newTodo.trim() !== "") {
-      setTodos([...todos, { 
-        id: Date.now(), 
-        text: newTodo, 
-        completed: false, 
-        priority: newPriority, 
-        dueDate: newDueDate 
-      }])
-      setNewTodo("")
-      setNewPriority("medium")
-      setNewDueDate(null)
+      const newTodoItem: Todo = {
+        id: Date.now(),
+        text: newTodo,
+        completed: false,
+        priority: newPriority,
+        dueDate: newDueDate,
+      };
+      setTodos((prevTodos) => sortTodos([...prevTodos, newTodoItem]));
+      setNewTodo("");
+      setNewPriority("medium");
+      setNewDueDate(null);
     }
-  }
+  };
 
   const toggleTodo = (id: number) => {
-    setTodos(todos.map((todo) => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ))
-  }
+    setTodos((prevTodos) =>
+      sortTodos(
+        prevTodos.map((todo) =>
+          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        )
+      )
+    );
+  };
 
   const removeTodo = (id: number) => {
-    setTodos(todos.filter((todo) => todo.id !== id))
-  }
+    setTodos((prevTodos) => sortTodos(prevTodos.filter((todo) => todo.id !== id)));
+  };
 
   const updatePriority = (id: number, priority: "low" | "medium" | "high") => {
-    setTodos(todos.map((todo) => 
-      todo.id === id ? { ...todo, priority } : todo
-    ))
-  }
+    setTodos((prevTodos) =>
+      sortTodos(
+        prevTodos.map((todo) => (todo.id === id ? { ...todo, priority } : todo))
+      )
+    );
+  };
 
   const updateDueDate = (id: number, date: Date | null) => {
-    setTodos(todos.map((todo) => 
-      todo.id === id ? { ...todo, dueDate: date } : todo
-    ))
-    setOpenCalendarId(null)
-  }
+    setTodos((prevTodos) =>
+      sortTodos(
+        prevTodos.map((todo) => (todo.id === id ? { ...todo, dueDate: date } : todo))
+      )
+    );
+    setOpenCalendarId(null);
+  };
 
   const getPriorityColor = (priority: "low" | "medium" | "high") => {
     switch (priority) {
-      case "low": return "bg-green-100 text-green-800"
-      case "medium": return "bg-yellow-100 text-yellow-800"
-      case "high": return "bg-red-100 text-red-800"
-      default: return ""
+      case "low":
+        return "bg-green-100 text-green-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "high":
+        return "bg-red-100 text-red-800";
+      default:
+        return "";
     }
-  }
+  };
 
-  const filteredTodos = todos.filter(todo => {
-    if (filter === "active") return !todo.completed
-    if (filter === "completed") return todo.completed
-    return true
-  })
-
-  const sortedTodos = filteredTodos.sort((a, b) => {
-    if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime()
-    if (a.dueDate) return -1
-    if (b.dueDate) return 1
-    return 0
-  })
+  const filteredTodos = todos.filter((todo) => {
+    if (filter === "active") return !todo.completed;
+    if (filter === "completed") return todo.completed;
+    return true;
+  });
 
   const clearCompleted = () => {
-    setTodos(todos.filter(todo => !todo.completed))
-  }
+    setTodos((prevTodos) => sortTodos(prevTodos.filter((todo) => !todo.completed)));
+  };
 
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
       <h1 className="text-2xl font-bold mb-4 text-center">To-Do List</h1>
-      
+
       <form onSubmit={addTodo} className="flex flex-col mb-4">
         <div className="flex mb-2">
           <Input
@@ -110,7 +127,10 @@ export default function TodoList() {
         </div>
 
         <div className="flex space-x-2">
-          <Select value={newPriority} onValueChange={(value: "low" | "medium" | "high") => setNewPriority(value)}>
+          <Select
+            value={newPriority}
+            onValueChange={(value: "low" | "medium" | "high") => setNewPriority(value)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select priority" />
             </SelectTrigger>
@@ -120,25 +140,35 @@ export default function TodoList() {
               <SelectItem value="high">High</SelectItem>
             </SelectContent>
           </Select>
-          <Popover open={openCalendarId === 0} onOpenChange={(open) => setOpenCalendarId(open ? 0 : null)}>
+          <Popover
+            open={openCalendarId === 0}
+            onOpenChange={(open) => setOpenCalendarId(open ? 0 : null)}
+          >
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className={cn("w-full justify-start text-left font-normal", !newDueDate && "text-muted-foreground")}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !newDueDate && "text-muted-foreground"
+                )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {newDueDate ? format(newDueDate, "PPP") : <span>Pick a due date</span>}
+                {newDueDate ? (
+                  format(newDueDate, "PPP")
+                ) : (
+                  <span>Pick a due date</span>
+                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
-              <Calendar 
-                mode="single" 
-                selected={newDueDate ?? undefined} 
+              <Calendar
+                mode="single"
+                selected={newDueDate ?? undefined}
                 onSelect={(date) => {
-                  setNewDueDate(date ?? null)
-                  setOpenCalendarId(null)
-                }} 
-                initialFocus 
+                  setNewDueDate(date ?? null);
+                  setOpenCalendarId(null);
+                }}
+                initialFocus
                 className="custom-calendar"
               />
             </PopoverContent>
@@ -147,7 +177,10 @@ export default function TodoList() {
       </form>
 
       <div className="flex justify-between mb-4">
-        <Select value={filter} onValueChange={(value: "all" | "active" | "completed") => setFilter(value)}>
+        <Select
+          value={filter}
+          onValueChange={(value: "all" | "active" | "completed") => setFilter(value)}
+        >
           <SelectTrigger className="w-32">
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
@@ -162,7 +195,7 @@ export default function TodoList() {
         </Button>
       </div>
 
-      {sortedTodos.length === 0 && (
+      {filteredTodos.length === 0 && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -172,7 +205,7 @@ export default function TodoList() {
       )}
 
       <ul className="space-y-2">
-        {sortedTodos.map((todo) => (
+        {filteredTodos.map((todo) => (
           <li key={todo.id} className="flex items-center justify-between p-2 border rounded">
             <div className="flex items-center flex-grow">
               <Checkbox
@@ -183,12 +216,19 @@ export default function TodoList() {
               />
               <label
                 htmlFor={`todo-${todo.id}`}
-                className={`flex-grow ${todo.completed ? "line-through text-gray-500" : ""} mr-2`}
+                className={`flex-grow ${
+                  todo.completed ? "line-through text-gray-500" : ""
+                } mr-2`}
               >
                 {todo.text}
               </label>
 
-              <Select value={todo.priority} onValueChange={(value: "low" | "medium" | "high") => updatePriority(todo.id, value)}>
+              <Select
+                value={todo.priority}
+                onValueChange={(value: "low" | "medium" | "high") =>
+                  updatePriority(todo.id, value)
+                }
+              >
                 <SelectTrigger className={`w-24 ${getPriorityColor(todo.priority)}`}>
                   <SelectValue />
                 </SelectTrigger>
@@ -201,22 +241,28 @@ export default function TodoList() {
             </div>
 
             <div className="flex items-center space-x-2">
-              <Popover open={openCalendarId === todo.id} onOpenChange={(open) => setOpenCalendarId(open ? todo.id : null)}>
+              <Popover
+                open={openCalendarId === todo.id}
+                onOpenChange={(open) => setOpenCalendarId(open ? todo.id : null)}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn("w-[180px] justify-start text-left font-normal", !todo.dueDate && "text-muted-foreground")}
+                    className={cn(
+                      "w-[180px] justify-start text-left font-normal",
+                      !todo.dueDate && "text-muted-foreground"
+                    )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {todo.dueDate ? format(todo.dueDate, "PPP") : <span>Set due date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                  <Calendar 
-                    mode="single" 
-                    selected={todo.dueDate ?? undefined} 
-                    onSelect={(date) => updateDueDate(todo.id, date)} 
-                    initialFocus 
+                  <Calendar
+                    mode="single"
+                    selected={todo.dueDate ?? undefined}
+                    onSelect={(date) => updateDueDate(todo.id, date)}
+                    initialFocus
                     className="custom-calendar"
                   />
                 </PopoverContent>
@@ -230,5 +276,7 @@ export default function TodoList() {
         ))}
       </ul>
     </div>
-  )
-}
+  );
+};
+
+export default TodoList;
