@@ -112,7 +112,7 @@ const TodoList = () => {
 
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-4 text-center">To-Do List</h1>
+      <h1 className="text-2xl font-bold mb-4 text-center">Tasky</h1>
 
       <form onSubmit={addTodo} className="flex flex-col mb-4">
         <div className="flex mb-2">

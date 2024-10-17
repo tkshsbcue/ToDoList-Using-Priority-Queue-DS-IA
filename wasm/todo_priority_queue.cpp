@@ -21,7 +21,7 @@ struct CompareTodo {
         }
         if (a.dueDate != 0 && b.dueDate != 0) {
             return a.dueDate > b.dueDate;
-        }`
+        }
         if (a.dueDate != 0) return false;
         if (b.dueDate != 0) return true;
         return a.id > b.id;
@@ -85,6 +85,4 @@ em++ -O3 -s WASM=1 -s MODULARIZE=1 -s EXPORT_NAME="createTodoPriorityQueueModule
     -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
     -s ALLOW_MEMORY_GROWTH=1 \
     -o public/todopriority_queue.js /Users/kumartanay/IA/wasm/todo_priority_queue.cpp
-
-
 */
